@@ -1,0 +1,4 @@
+pyperclip~=1.9.0
+pillow~=10.4.0
+pyinstaller~=6.9.0
+fire~=0.6.0
