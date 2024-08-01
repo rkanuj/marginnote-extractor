@@ -38,12 +38,33 @@
 | 参数                    | 默认值                              | 备注                               |
 |-----------------------|----------------------------------|----------------------------------|
 | `root_id`             | `None`                           | 命令行接受的第一个参数，需要导出的根节点卡片 ID        |
+| `silent`              | `False`                          | 静默模式，启用剪贴板的话什么也不输出，关闭剪贴板时只输出大纲   |
+| `use_clipboard`       | `True`                           | 是否将输出拷贝到剪贴板                      |
 | `use_backup`          | `False`                          | 是否使用备份文件进行导出                     |
 | `use_backup_pkg`      | `False`                          | 是否处理备份文件后缀为 `marginpkg`（单个学习集导出） |
 | `backup_path`         | `'~/Downloads/MarginNoteBackup'` | 读取备份文件的目录路径                      |
 | `image_quality`       | `25`                             | 图片摘录压缩的质量                        |
 | `image_resize_factor` | `0.5`                            | 图片摘录缩放的比例                        |
 
+可以搭配 Obsidian Templater 插件的 System Command [^3] 使用：
+
+- 打包好命令行丢到正确的 `$PATH` 里
+- Templater 增加下面这条系统命令绑定，用户函数名可以用 `marginnote_extractor`
+
+```shell
+marginnote-extractor <% tp.system.prompt("Please input the root ID", null, true) %> --silent --use_clipboard=False
+```
+
+- 然后通过这个模板命令调用，直接输出 MarginNote 摘录大纲到任意 Obsidian 文件
+
+```
+<% tp.user.marginnote_extractor() %>
+```
+
+不知道为什么 Templater 执行这条命令会很慢，macOS 还需要手动同意 Obsidian 访问其它应用的数据，建议将 Timeout 设为 30s 以上耐心等待输出。
+
 [^1]: https://help.obsidian.md/Linking+notes+and+files/Internal+links#Link+to+a+block+in+a+note
 
 [^2]: https://minimal.guide/checklists
+
+[^3]: https://silentvoid13.github.io/Templater/user-functions/system-user-functions.html

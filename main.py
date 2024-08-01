@@ -15,6 +15,13 @@ import pyperclip
 from PIL import Image
 
 
+def log(*args, **kwargs):
+    if config['silent']:
+        return
+
+    print(*args, **kwargs)
+
+
 class Config:
     def __init__(self, **kwargs):
         self.update(**kwargs)
@@ -166,7 +173,7 @@ def get_latest_backup_db(backup_dir):
             latest_time = datetime_obj
 
     if latest_backup is None:
-        print('No backup file found')
+        log('No backup file found')
         sys.exit(1)
 
     if config['use_backup_pkg']:
@@ -178,7 +185,7 @@ def get_latest_backup_db(backup_dir):
 def iter_notes(db, note_id, depth=0):
     note = db.get_note_by_id(note_id)
     if note is None:
-        print('Note not found: ', note_id)
+        log('Note not found: ', note_id)
         return
 
     yield note_id, note, depth
@@ -210,14 +217,14 @@ def main(root_id=None):
         try:
             root_id = input('Please input the root ID: ').strip()
         except KeyboardInterrupt:
-            print('exit')
+            log('exit')
             sys.exit(0)
         except EOFError:
-            print('exit')
+            log('exit')
             sys.exit(0)
 
     if root_id == '':
-        print('No root ID provided')
+        log('No root ID provided')
         return
 
     if root_id.lower() == 'exit':
@@ -229,15 +236,15 @@ def main(root_id=None):
     root_id = root_id.upper()
 
     if not re.match(r'^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$', root_id):
-        print('Invalid root ID')
+        log('Invalid root ID')
         return
 
     if config['use_backup']:
         latest_backup_db = get_latest_backup_db(config['backup_path'])
-        print('Using latest backup Database: ', latest_backup_db)
+        log('Using latest backup Database: ', latest_backup_db)
         db = MarginNoteDatabase(latest_backup_db)
     else:
-        print('Using live Database')
+        log('Using live Database')
         db = MarginNoteDatabase(config['database_path'])
 
     root_note = ''
@@ -322,22 +329,35 @@ def main(root_id=None):
 
     if len(notes) > 0:
         text = '\n'.join(notes)
-        pyperclip.copy(text)
-        print(f'Outline of "{root_note}" copied to clipboard:\n'
-              f'- Characters: {len(text)}\n'
-              f'- Notes: {len(notes)}\n'
-              f'- Images: {image_count}\n'
-              f'- No content: {no_content_count}')
+        if config['use_clipboard']:
+            pyperclip.copy(text)
+        else:
+            log()
+            print(text)
+
+        if config['use_clipboard']:
+            log(f'Outline of "{root_note}" copied to clipboard:')
+        else:
+            log(f'\nSummary:')
+
+        log(f'- Characters: {len(text)}\n'
+            f'- Notes: {len(notes)}\n'
+            f'- Images: {image_count}\n'
+            f'- No content: {no_content_count}')
     else:
-        print('No notes found')
+        log('No notes found')
 
 
 def loop_main(root_id=None,
+              silent=False,
+              use_clipboard=True,
               use_backup=False,
               use_backup_pkg=False,
               backup_path=os.path.expanduser('~/Downloads/MarginNoteBackup'),
               image_quality=25,
               image_resize_factor=0.5):
+    config['silent'] = silent
+    config['use_clipboard'] = use_clipboard
     config['use_backup'] = use_backup
     config['use_backup_pkg'] = use_backup_pkg
     config['backup_path'] = backup_path
@@ -351,7 +371,7 @@ def loop_main(root_id=None,
             while True:
                 main()
     except KeyboardInterrupt:
-        print('exit')
+        log('exit')
 
 
 config = Config()
